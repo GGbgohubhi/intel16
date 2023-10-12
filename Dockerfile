@@ -28,12 +28,12 @@ RUN echo "#!/bin/bash" > $HOME/.vnc/xstartup && \
 
 # 创建启动脚本
 RUN echo "#!/bin/bash" > $HOME/yang.sh && \
-    echo "vncserver :1 -geometry 1280x800 -depth 24 && tail -F $HOME/.vnc/*.log &" >> $HOME/yang.sh && \
-    echo "cd /opt/noVNC && ./utils/launch.sh --listen 5901 --vnc localhost:5901" >> $HOME/yang.sh && \
+    echo "vncserver :1 -geometry 1360x768 -depth 24 && tail -F $HOME/.vnc/*.log &" >> $HOME/yang.sh && \
+    echo "cd /opt/noVNC && ./utils/launch.sh --listen 8900 --vnc localhost:8900" >> $HOME/yang.sh && \
     chmod +x $HOME/yang.sh
 
 # 暴露 5901 端口
-EXPOSE 5901
+EXPOSE 8900
 
 # 运行启动脚本
 CMD $HOME/yang.sh
