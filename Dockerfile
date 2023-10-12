@@ -1,29 +1,39 @@
 FROM debian
 
-RUN dpkg --add-architecture i386 && \
-    apt update && \
-    DEBIAN_FRONTEND=noninteractive apt install -y wine qemu-kvm xz-utils dbus-x11 curl firefox-esr gnome-system-monitor mate-system i965-va-driver mesa-utils libglx-mesa0 libgl1-mesa-dri && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+# 添加 i386 架构
+RUN dpkg --add-architecture i386
 
-RUN wget https://github.com/novnc/noVNC/archive/refs/tags/v1.2.0.tar.gz && \
-    tar -xvf v1.2.0.tar.gz && \
-    rm v1.2.0.tar.gz
+# 更新包列表
+RUN apt update
 
-RUN mkdir $HOME/.vnc && \
-    echo 'password' | vncpasswd -f > $HOME/.vnc/passwd && \
-    echo '#!/bin/bash\nstartmate &' > $HOME/.vnc/xstartup && \
+# 安装所需软件包和工具
+RUN DEBIAN_FRONTEND=noninteractive apt install -y wine qemu-kvm *zenhei* xz-utils dbus-x11 curl firefox-esr gnome-system-monitor mate-desktop-environment-core synaptic gedit git xfce4 xfce4-terminal tightvncserver -qq
+
+# 下载和解压 noVNC
+RUN curl -o noVNC.tar.gz https://github.com/novnc/noVNC/archive/v1.2.0.tar.gz && \
+    tar -xzvf noVNC.tar.gz && \
+    mv noVNC-1.2.0 /opt/noVNC && \
+    rm noVNC.tar.gz
+
+# 创建 VNC 密码
+RUN mkdir -p $HOME/.vnc && \
+    echo "password" | vncpasswd -f > $HOME/.vnc/passwd && \
     chmod 600 $HOME/.vnc/passwd
 
-RUN echo '#!/bin/bash\n' > /start.sh && \
-    echo 'vncserver :1 -geometry 1280x800 -depth 24' >> /start.sh && \
-    echo './noVNC-1.2.0/utils/launch.sh --vnc localhost:5901 --listen 8900' >> /start.sh && \
-    chmod +x /start.sh
+# 创建 VNC 启动命令
+RUN echo "#!/bin/bash" > $HOME/.vnc/xstartup && \
+    echo "xrdb $HOME/.Xresources" >> $HOME/.vnc/xstartup && \
+    echo "startxfce4 &" >> $HOME/.vnc/xstartup && \
+    chmod +x $HOME/.vnc/xstartup
 
-RUN echo '#!/bin/bash\n' > /x11vnc.sh && \
-    echo 'x11vnc -display :1 -rfbport 5901 & \n' >> /x11vnc.sh && \
-    echo './noVNC-1.2.0/utils/launch.sh --vnc localhost:5901 --listen 8900' >> /x11vnc.sh && \
-    chmod +x /x11vnc.sh
+# 创建启动脚本
+RUN echo "#!/bin/bash" > $HOME/yang.sh && \
+    echo "vncserver :1 -geometry 1280x800 -depth 24 && tail -F $HOME/.vnc/*.log &" >> $HOME/yang.sh && \
+    echo "cd /opt/noVNC && ./utils/launch.sh --listen 5901 --vnc localhost:5901" >> $HOME/yang.sh && \
+    chmod +x $HOME/yang.sh
 
-EXPOSE 8900
-CMD ["/start.sh"]
+# 暴露 5901 端口
+EXPOSE 5901
+
+# 运行启动脚本
+CMD $HOME/yang.sh
